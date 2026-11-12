@@ -30,6 +30,35 @@ place (the scorer gives a place's unnamed mass to the chart's coins the
 forecast did not name). The unnamed share grows with the horizon (about
 half at the shortest reads, about two-thirds at the longest).
 
+## v4 (guide approach) — the submitted version
+
+Built from an external scoring guide's ideas, each tested separately on
+the rehearsal and on a 4-hour synthetic check (not on the 12-hour one).
+Kept changes, on top of the horizon-tracking spike variant:
+
+- **Saturating spread**: σ(h) = 0.06 + 0.45·(1−exp(−h/3.0)) replaces
+  √h growth — spread grows with horizon but not forever (mean reversion).
+- **4-mark slope window** (was 6 marks) for the drift estimate.
+
+Tested and REJECTED: size bins as order statistics of the cross-section
+(rehearsal −34.44 but the synthetic check floored at −71.77: MC-drawn
+top-5 caps overshoot the real level by +1..2 log at long horizons);
+named mass 0.55–0.65 per place (lost on both testbeds — the unnamed share
+is worth more than the guide claims); p cap 0.30–0.40 (moot — max named
+p is 0.176 on real input); quote_reserves as a liquidity feature
+(unmeasurable in the kit — only 3 pool coins at the cut). Top-5-by-argmax
+was already the case.
+
+Rehearsal: **v4 -35.58** (order -21.13, sizes -14.45) — a tie with v3
+(-35.43). Known weakness, found on the 4-hour synthetic check: the MC
+is more diffuse than v3's (12–14 rows/place at p ≤ 1e-4), so eventual
+winners can land in the near-zero tail and score the -9.21 floor (18
+order floors of 140 at 4h, present at 1h reads too); its size gains
+(+2.0 vs v2) did not cover its order losses (-4.2) there. This
+submission is a live test of whether that defect also bites on the
+practice window — if its practice score is worse than v3's (-36.54),
+v3 can be resubmitted to restore it.
+
 ## v3 (calibrated) — the submitted version
 
 A systematic calibration round (~50 configurations, staged coordinate
