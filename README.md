@@ -30,6 +30,33 @@ place (the scorer gives a place's unnamed mass to the chart's coins the
 forecast did not name). The unnamed share grows with the horizon (about
 half at the shortest reads, about two-thirds at the longest).
 
+## v3 (calibrated) — the submitted version
+
+A systematic calibration round (~50 configurations, staged coordinate
+descent on the same rehearsal backtest) found the best single lever is the
+graduation-spike width. v3 changes, all on top of v2:
+
+- **Narrower graduation spike**: SD 0.30 → 0.20 (centre stays 3.20).
+  The spike is really a "top-5 cap prior": the rehearsal's actual place
+  caps sit in a tight band (place 1 mean 3.43, places 2–5 mean 3.08–3.23).
+- **Higher graduation probability**: Q_GRAD 0.25 → 0.35.
+- **Tighter pool-coin spread**: SIG0 0.06, SIG_RATE 0.25 (was 0.12 /
+  0.20). The spread still grows with the square root of the horizon.
+- **Slope clamp back down**: SLOPE_HI 0.15 (was 0.30). Everything else
+  stays at v2 (unnamed share, SPIKE_MU 3.20, p=0 naming).
+
+Rehearsal: **v3 -35.43** (order -20.95, sizes -14.48) vs v2 -36.79 —
++1.36, better on both components, wins on all 4 cuts (-40.87 / -36.25 /
+-28.30 / -25.44 vs v2 -42.10 / -38.31 / -28.98 / -26.66). The rejected
+greedy variant (-34.24, SPIKE_SD 0.10) was deliberately not shipped: a
+near point-mass on this hour's realised caps is rehearsal memorisation.
+
+A 4-hour synthetic check (fresh histories grounded in the measured kit
+dynamics, reads 1–4 h after the cut) shows v3 ties v2 on total with no
+size problem at 4 h — the narrow spike's failure mode, if any, lies
+beyond 4 h. Honest caveat: the +1.36 is in-sample on one hour of real
+data; the true final effect is plausibly small (±0.5).
+
 ## v2 changes
 
 The v1 entry scored -37.66 on the official practice forecast

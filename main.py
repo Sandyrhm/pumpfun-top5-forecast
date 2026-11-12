@@ -1,3 +1,7 @@
+# CALIBRATED VARIANT (conservative ship candidate) — constants tuned by a
+# systematic rehearsal search (10 pseudo-reads, same scorer replica as v1/v2).
+# Rehearsal: total -35.43 (order -20.95, sizes -14.48) vs v2 -36.79 (-20.97/-15.82).
+# Wins on all 4 cuts vs v2. See /tmp/calibration-summary.md. DO NOT SUBMIT without review.
 """Forecast the top 5 pump.fun coins by market cap, 24 hours out.
 
 Reads the house's 10-minute market-cap snapshots from $MAKEFUN_INPUT_DIR
@@ -72,7 +76,7 @@ FLOOR_LOGMC = 1.447  # bonding-curve floor in the rehearsal (~28 SOL)
 
 # Pool-coin drift.
 SLOPE_LO = 0.30      # clamp on recent slope, per hour in log10, downward
-SLOPE_HI = 0.30      # clamp on recent slope, per hour in log10, upward (v2:
+SLOPE_HI = 0.15      # clamp on recent slope, per hour in log10, upward (v2:
                      # rehearsal leaders rise +0.31 to +0.55/h, so v1's +0.15
                      # capped the drift far below the data; still shrunk and
                      # saturated, so the total drift stays bounded)
@@ -80,18 +84,18 @@ SLOPE_SHRINK = 0.7   # shrink the measured slope toward zero
 DRIFT_TAU_H = 2.0    # slope effect saturates over this many hours
 FADE_PER_H = 0.05    # slow expected fade per hour, only for old coins
 OLD_AGE_H = 3.0      # a coin older than this at the cut is "old"
-SIG0 = 0.12          # predictive sd at the cut (v2: fitted to the rehearsal's
-SIG_RATE = 0.20      # pool-coin 10-minute moves, sd ~0.135; v1's 0.18+0.28
+SIG0 = 0.06          # predictive sd at the cut (v2: fitted to the rehearsal's
+SIG_RATE = 0.25      # pool-coin 10-minute moves, sd ~0.135; v1's 0.18+0.28
                      # spread the place distributions wider than the data)
 
 # Curve-coin graduation mixture.
-Q_GRAD_BASE = 0.25   # base probability a live curve coin graduates and spikes
+Q_GRAD_BASE = 0.35   # base probability a live curve coin graduates and spikes
 Q_GRAD_AGE0 = 0.5    # age (hours) after which the chance starts decaying
 Q_GRAD_DECAY = 1.0   # decay time constant, hours
-Q_GRAD_MAX = 0.25    # cap on the graduation chance
+Q_GRAD_MAX = 0.35    # cap on the graduation chance
 Q_GRAD_PEAK_MIN = 2.0  # only coins that reached this log-cap can spike
 SPIKE_MU = 3.20      # log-cap of a fresh pool spike (v2: the rehearsal's
-SPIKE_SD = 0.30      # fresh graduates landed at 2.92-3.47, mean ~3.2)
+SPIKE_SD = 0.2      # fresh graduates landed at 2.92-3.47, mean ~3.2)
 FLOOR_MU = 1.47      # log-cap of a dead curve coin
 FLOOR_SD = 0.08
 
