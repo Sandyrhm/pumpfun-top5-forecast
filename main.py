@@ -41,6 +41,22 @@ on every split (mean log score about -37.7 vs -48.3 over ten pseudo-reads).
 The rehearsal only reaches 40-minute horizons, so the long-horizon
 calibration (spread and unnamed share at 7-13 hours) is an extrapolation
 from that, stated honestly in the README.
+
+v2 changes (rehearsal backtest: -36.79 vs v1's -37.76, order -20.97 vs
+-21.48, sizes -15.82 vs -16.28, same ten pseudo-reads):
+- p=0 naming: coins on the cut's chart (ranks 11-100) that never reach the
+  top 5 in any Monte Carlo draw and whose peak is below 1.6 (well under the
+  ~1.93 graduation level) are named at p=0 at every place, so the scorer's
+  unnamed share is divided among fewer chart coins. Worth +0.5 on the
+  rehearsal's order score; the peak cap is deliberately conservative.
+- Tighter predictive spread for pool coins (sd 0.12 + 0.20*sqrt(h) instead
+  of 0.18 + 0.28*sqrt(h)), fitted to the rehearsal's pool-coin 10-minute
+  moves (sd about 0.135).
+- Graduation spike re-centred to N(3.20, 0.30): the rehearsal's fresh
+  graduates landed at 2.92-3.47 in log-cap.
+- Upward slope clamp raised to +0.30/h with shrink 0.7 (rehearsal leaders
+  rise +0.31 to +0.55/h; v1's +0.15/h capped the drift far below the data).
+  Still shrunk and saturated over 2 hours, so the total drift stays bounded.
 """
 
 import json
@@ -56,13 +72,17 @@ FLOOR_LOGMC = 1.447  # bonding-curve floor in the rehearsal (~28 SOL)
 
 # Pool-coin drift.
 SLOPE_LO = 0.30      # clamp on recent slope, per hour in log10, downward
-SLOPE_HI = 0.15      # clamp on recent slope, per hour in log10, upward
-SLOPE_SHRINK = 0.5   # shrink the measured slope toward zero
+SLOPE_HI = 0.30      # clamp on recent slope, per hour in log10, upward (v2:
+                     # rehearsal leaders rise +0.31 to +0.55/h, so v1's +0.15
+                     # capped the drift far below the data; still shrunk and
+                     # saturated, so the total drift stays bounded)
+SLOPE_SHRINK = 0.7   # shrink the measured slope toward zero
 DRIFT_TAU_H = 2.0    # slope effect saturates over this many hours
 FADE_PER_H = 0.05    # slow expected fade per hour, only for old coins
 OLD_AGE_H = 3.0      # a coin older than this at the cut is "old"
-SIG0 = 0.18          # predictive sd at the cut
-SIG_RATE = 0.28      # sd grows with sqrt(hours) after the cut
+SIG0 = 0.12          # predictive sd at the cut (v2: fitted to the rehearsal's
+SIG_RATE = 0.20      # pool-coin 10-minute moves, sd ~0.135; v1's 0.18+0.28
+                     # spread the place distributions wider than the data)
 
 # Curve-coin graduation mixture.
 Q_GRAD_BASE = 0.25   # base probability a live curve coin graduates and spikes
@@ -70,10 +90,19 @@ Q_GRAD_AGE0 = 0.5    # age (hours) after which the chance starts decaying
 Q_GRAD_DECAY = 1.0   # decay time constant, hours
 Q_GRAD_MAX = 0.25    # cap on the graduation chance
 Q_GRAD_PEAK_MIN = 2.0  # only coins that reached this log-cap can spike
-SPIKE_MU = 3.10      # log-cap of a fresh pool spike
-SPIKE_SD = 0.35
+SPIKE_MU = 3.20      # log-cap of a fresh pool spike (v2: the rehearsal's
+SPIKE_SD = 0.30      # fresh graduates landed at 2.92-3.47, mean ~3.2)
 FLOOR_MU = 1.47      # log-cap of a dead curve coin
 FLOOR_SD = 0.08
+
+# p=0 naming (v2): name coins that certainly cannot take a top-5 place at
+# p=0, so the scorer's unnamed share is divided among fewer chart coins.
+P0_RANK_LO = 11     # ranks on the cut's chart (top 100) eligible for p=0
+P0_RANK_HI = 100
+P0_PEAK_MAX = 1.6   # peak log-cap: well under the ~1.93 graduation level, so
+                    # the coin cannot graduate and spike; deliberately
+                    # conservative, because a p=0 coin that took a place
+                    # would score the floor (-9.21) at that place
 
 # Unnamed mass for coins the history never ranked (newcomers): grows with
 # horizon h as A + B * (1 - exp(-h / TAU)), saturating near A + B.
@@ -257,6 +286,28 @@ def forecast(task, marks):
                 rows.append({"mint": mint, "place": k, "p": round(p, 6)})
         rows.sort(key=lambda r: (-r["p"], r["mint"]))
         probabilities[k] = rows[:MAX_ROWS_PER_PLACE]
+
+    # p=0 naming: the scorer shares a place's unnamed mass among the chart
+    # coins not named there, so naming sure losers at p=0 concentrates that
+    # share on the coins that might take the place (newcomers included).
+    # Candidates: on the cut's chart, never in the top 5 in any Monte Carlo
+    # draw, peak below P0_PEAK_MAX.
+    zero_mints = {coin["mint"] for coin in coin_list
+                  if all(place_counts[k].get(coin["mint"], 0) == 0
+                         for k in range(1, places + 1))}
+    last_rows = marks[-1].get("rows", [])[:100]
+    rank_of = {row["mint"]: i + 1 for i, row in enumerate(last_rows)}
+    p0_mints = sorted(
+        (rank_of[coin["mint"]], coin["mint"])
+        for coin in coin_list
+        if coin["mint"] in zero_mints
+        and rank_of.get(coin["mint"]) is not None
+        and P0_RANK_LO <= rank_of[coin["mint"]] <= P0_RANK_HI
+        and coin["peak"] <= P0_PEAK_MAX)
+    for k in range(1, places + 1):
+        room = MAX_ROWS_PER_PLACE - len(probabilities[k])
+        for _, mint in p0_mints[:room]:
+            probabilities[k].append({"mint": mint, "place": k, "p": 0.0})
 
     sizes = {}
     for k in range(1, places + 1):
