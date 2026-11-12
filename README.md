@@ -162,3 +162,8 @@ MAKEFUN_INPUT_DIR=<kit>/input MAKEFUN_OUTPUT_DIR=out python3 main.py
 
 Writes `out/forecast.json`. Two runs on the same history write the same
 bytes.
+
+
+## v5 — v3 restored (round 5)
+
+v4 (guide approach) scored **-37.25** in practice, worse than v3's **-36.54**, so v3 was restored per the user's standing instruction ("Kalau jelek kembalikan ke v3"). main.py is again the calibrated v3 code (identical to main-v3.py); v4 is kept as main-v4.py. Practice scores: v1 -37.66, v2 -36.90, v3 -36.54, v4 -37.25.
